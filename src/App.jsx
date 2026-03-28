@@ -291,7 +291,8 @@ export default function App() {
       const response = await fetch(forgeEndpoint.trim() || DEFAULT_FORGE_ENDPOINT, {
         method: "POST",
         headers: {
-          "Content-Type": "application/json"
+          "Content-Type": "application/json",
+          "Bypass-Tunnel-Reminder": "true"
         },
         body: JSON.stringify({
           prompt: enhancedPrompt,
