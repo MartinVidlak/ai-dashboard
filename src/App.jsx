@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from "react";
 
 const DEFAULT_CHAT_ENDPOINT = "http://127.0.0.1:1234/v1/chat/completions";
 const DEFAULT_FORGE_ENDPOINT = "http://127.0.0.1:7860/sdapi/v1/txt2img";
+/** Výchozí název modelu v LM Studio (uživatel může změnit na načtený model). */
+const DEFAULT_CHAT_MODEL = "mistral-7b-instruct";
 const TRANSLATION_SYSTEM_PROMPT =
   "Translate the following Czech phrase to a short, descriptive English Stable Diffusion prompt. Do not add any conversational text, just output the English translation.";
 const FORGE_PROMPT_SUFFIX = ", photorealistic, 8k, detailed, raw photo";
@@ -14,7 +16,7 @@ const STORAGE_KEY = "ai-dashboard-chat-history";
 // uiOnly: true — zpráva se zobrazí v chatu, ale NIKDY nejde do API
 const WELCOME_MESSAGE = {
   role: "assistant",
-  text: "Ahoj, vítej v Osobním AI Dashboardu. Napiš první dotaz a začneme.",
+  text: "Ahoj! Jsem tvůj lokální AI asistent. Pokud máš spuštěné LM Studio, můžeme si začít povídat. Pokud ne, prohlédni si design dashboardu!",
   uiOnly: true
 };
 
@@ -63,7 +65,7 @@ function extractAssistantTextFromCompletion(data) {
 export default function App() {
   const [apiKey, setApiKey] = useState("");
   const [chatModel, setChatModel] = useState(() => {
-    try { return localStorage.getItem("ai-dashboard-model") || "local-model"; } catch { return "local-model"; }
+    try { return localStorage.getItem("ai-dashboard-model") || DEFAULT_CHAT_MODEL; } catch { return DEFAULT_CHAT_MODEL; }
   });
   const [chatEndpoint, setChatEndpoint] = useState(() => {
     try { return localStorage.getItem("ai-dashboard-chat-endpoint") || DEFAULT_CHAT_ENDPOINT; } catch { return DEFAULT_CHAT_ENDPOINT; }
@@ -157,7 +159,7 @@ export default function App() {
     if (!userText || isGenerating) return;
 
     const endpoint = chatEndpoint.trim() || DEFAULT_CHAT_ENDPOINT;
-    const model   = chatModel.trim()    || "local-model";
+    const model   = chatModel.trim()    || DEFAULT_CHAT_MODEL;
 
     // ── Sestavení payloadu přímo zde, bez delegování ──────────────────────────
     // 1) Filtrujeme stav: žádné uiOnly, žádné prázdné texty
@@ -260,7 +262,7 @@ export default function App() {
           "Content-Type": "application/json"
         },
         body: JSON.stringify({
-          model: chatModel.trim() || "local-model",
+          model: chatModel.trim() || DEFAULT_CHAT_MODEL,
           stream: false,
           messages: [
             {
@@ -359,7 +361,7 @@ export default function App() {
               <input
                 id="chat-model"
                 type="text"
-                placeholder="Např. local-model"
+                placeholder="Např. mistral-7b-instruct nebo vlastní model z LM Studio…"
                 value={chatModel}
                 onChange={(event) => setChatModel(event.target.value)}
                 className="w-full rounded-xl border border-slate-700/70 bg-slate-950 px-3 py-2.5 text-sm text-slate-100 placeholder:text-slate-600 shadow-inner transition focus:border-indigo-500/60 focus:outline-none focus:ring-2 focus:ring-indigo-500/25"
@@ -428,24 +430,38 @@ export default function App() {
 
             <div className="flex flex-wrap items-center gap-3">
               {/* Indikátor stavu serveru */}
-              {serverStatus === "checking" && (
-                <span className="flex items-center gap-1.5 rounded-full border border-slate-600/40 bg-slate-800/60 px-3 py-1 text-xs font-medium text-slate-400">
-                  <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-slate-400" />
-                  Ověřuji připojení…
+              <div className="flex flex-col items-end gap-0.5">
+                {serverStatus === "checking" && (
+                  <span
+                    title="Stav lokálního spojení"
+                    className="flex items-center gap-1.5 rounded-full border border-slate-600/40 bg-slate-800/60 px-3 py-1 text-xs font-medium text-slate-400"
+                  >
+                    <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-slate-400" />
+                    Ověřuji připojení…
+                  </span>
+                )}
+                {serverStatus === "online" && (
+                  <span
+                    title="Stav lokálního spojení"
+                    className="flex items-center gap-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1 text-xs font-medium text-emerald-300"
+                  >
+                    <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
+                    Online
+                  </span>
+                )}
+                {serverStatus === "offline" && (
+                  <span
+                    title="Stav lokálního spojení"
+                    className="flex items-center gap-1.5 rounded-full border border-rose-500/30 bg-rose-500/10 px-3 py-1 text-xs font-medium text-rose-300"
+                  >
+                    <span className="h-1.5 w-1.5 rounded-full bg-rose-400" />
+                    Offline (Demo)
+                  </span>
+                )}
+                <span className="max-w-[11rem] text-right text-[10px] leading-tight text-slate-500">
+                  Stav lokálního spojení
                 </span>
-              )}
-              {serverStatus === "online" && (
-                <span className="flex items-center gap-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1 text-xs font-medium text-emerald-300">
-                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
-                  Online
-                </span>
-              )}
-              {serverStatus === "offline" && (
-                <span className="flex items-center gap-1.5 rounded-full border border-rose-500/30 bg-rose-500/10 px-3 py-1 text-xs font-medium text-rose-300">
-                  <span className="h-1.5 w-1.5 rounded-full bg-rose-400" />
-                  Offline (Demo)
-                </span>
-              )}
+              </div>
               {mainTab === "chat" && (
                 <button
                   type="button"
@@ -597,6 +613,11 @@ export default function App() {
                 <p className="mt-1 text-xs text-slate-600">Klikni pro zobrazení • Přejeď pro stažení</p>
 
                 <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+                  {generatedImages.length === 0 && !isGeneratingImage && (
+                    <p className="col-span-full rounded-2xl border border-dashed border-slate-700/50 bg-slate-950/20 py-12 text-center text-sm text-slate-500">
+                      Zatím žádné obrázky. Spusťte Forge a vygenerujte svůj první kousek!
+                    </p>
+                  )}
                   {isGeneratingImage && (
                     <div className="aspect-square animate-pulse rounded-2xl border border-fuchsia-500/20 bg-slate-800/60">
                       <div className="flex h-full items-center justify-center">
