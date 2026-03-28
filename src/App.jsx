@@ -3,14 +3,14 @@ import { useEffect, useRef, useState } from "react";
 const DEFAULT_CHAT_ENDPOINT = "http://127.0.0.1:1234/v1/chat/completions";
 const DEFAULT_FORGE_ENDPOINT = "http://127.0.0.1:7860/sdapi/v1/txt2img";
 /** Výchozí název modelu v LM Studio (uživatel může změnit na načtený model). */
-const DEFAULT_CHAT_MODEL = "mistral-7b-instruct";
+const DEFAULT_CHAT_MODEL = "mistral-nemo-instruct-2407";
 const TRANSLATION_SYSTEM_PROMPT =
   "Translate the following Czech phrase to a short, descriptive English Stable Diffusion prompt. Do not add any conversational text, just output the English translation.";
 const FORGE_PROMPT_SUFFIX = ", photorealistic, 8k, detailed, raw photo";
 const SYSTEM_MESSAGE = {
   role: "system",
   content:
-    "Jsi inteligentní český asistent jménem AI Dashboard. Tvým úkolem je odpovídat PŘIROZENOU a GRAMATICKY SPRÁVNOU ČEŠTINOU. Nikdy nepoužívej doslovné překlady z angličtiny. Používej tykání a buď přátelský, ale profesionální. Pokud nevíš, jak něco říct přirozeně, formuluj větu jinak."
+    `Jsi inteligentní český asistent. Odpovídej VŽDY PŘIROZENOU ČEŠTINOU, jako bys byl rodilý mluvčí. Nepoužívej doslovné překlady z angličtiny (např. místo "já jsem dobře" řekni "mám se skvěle"). Buď přátelský, tykej uživateli a piš gramaticky správně.`
 };
 const STORAGE_KEY = "ai-dashboard-chat-history";
 // uiOnly: true — zpráva se zobrazí v chatu, ale NIKDY nejde do API
@@ -264,6 +264,7 @@ export default function App() {
         body: JSON.stringify({
           model: chatModel.trim() || DEFAULT_CHAT_MODEL,
           stream: false,
+          temperature: 0.7,
           messages: [
             {
               role: "system",
@@ -361,7 +362,7 @@ export default function App() {
               <input
                 id="chat-model"
                 type="text"
-                placeholder="Např. mistral-7b-instruct nebo vlastní model z LM Studio…"
+                placeholder="Např. mistral-nemo-instruct-2407 nebo vlastní model z LM Studio…"
                 value={chatModel}
                 onChange={(event) => setChatModel(event.target.value)}
                 className="w-full rounded-xl border border-slate-700/70 bg-slate-950 px-3 py-2.5 text-sm text-slate-100 placeholder:text-slate-600 shadow-inner transition focus:border-indigo-500/60 focus:outline-none focus:ring-2 focus:ring-indigo-500/25"
