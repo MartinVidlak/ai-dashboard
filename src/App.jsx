@@ -7,6 +7,17 @@ const DEFAULT_CHAT_MODEL = "mistral-nemo-instruct-2407";
 const TRANSLATION_SYSTEM_PROMPT =
   "Turn the following text into a short, descriptive English Stable Diffusion prompt. Do not add any conversational text—output only the English prompt.";
 const FORGE_PROMPT_SUFFIX = ", photorealistic, 8k, detailed, raw photo";
+
+/** Forge / Automatic1111 txt2img — append path if the settings URL is only origin (e.g. tunnel base). */
+function resolveForgeTxt2ImgUrl(raw) {
+  const trimmed = (raw || DEFAULT_FORGE_ENDPOINT).trim();
+  const withoutTrailingSlashes = trimmed.replace(/\/+$/, "");
+  if (/\/sdapi\/v1\/txt2img$/i.test(withoutTrailingSlashes)) {
+    return withoutTrailingSlashes;
+  }
+  return `${withoutTrailingSlashes}/sdapi/v1/txt2img`;
+}
+
 const SYSTEM_MESSAGE = {
   role: "system",
   content: "You are a helpful and professional AI assistant. Answer concisely and clearly in English."
@@ -288,18 +299,20 @@ export default function App() {
       }
 
       const enhancedPrompt = `${translatedPrompt}${FORGE_PROMPT_SUFFIX}`;
-      const response = await fetch(forgeEndpoint.trim() || DEFAULT_FORGE_ENDPOINT, {
+      const forgeUrl = resolveForgeTxt2ImgUrl(forgeEndpoint);
+      const forgeBody = {
+        prompt: enhancedPrompt,
+        steps: 20,
+        width: 512,
+        height: 512
+      };
+      const response = await fetch(forgeUrl, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           "Bypass-Tunnel-Reminder": "true"
         },
-        body: JSON.stringify({
-          prompt: enhancedPrompt,
-          steps: 20,
-          width: 512,
-          height: 512
-        })
+        body: JSON.stringify(forgeBody)
       });
 
       if (!response.ok) {
