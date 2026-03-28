@@ -38,3 +38,8 @@ lt --port 7860
 Open the Live Demo
 Open your generated .loca.lt URL in a new tab to bypass the initial reminder.
 Paste the URL into the IMAGE GENERATOR — FORGE field in the dashboard settings.
+
+💡 Technical Challenges Overcome
+CORS & Tunnel Blockers: Implemented custom fetch headers (Bypass-Tunnel-Reminder) to allow seamless API communication through reverse proxies.
+Asynchronous UI: Developed a robust state management system to handle image generation loading states and gallery updates.
+Prompt Engineering: Built a system that automatically enhances simple user descriptions into high-quality Stable Diffusion prompts.
