@@ -110,6 +110,12 @@ export default function App() {
   const [selectedImage, setSelectedImage] = useState(null); // { src, prompt } | null
   const [isGeneratingImage, setIsGeneratingImage] = useState(false);
   const [imageError, setImageError] = useState("");
+
+  const deleteImage = (id) => {
+    if (!window.confirm("Delete this image? This cannot be undone.")) return;
+    setGeneratedImages((prev) => prev.filter((img) => img.id !== id));
+    setSelectedImage((prev) => (prev?.id === id ? null : prev));
+  };
   const [mainTab, setMainTab] = useState("chat");
   const [serverStatus, setServerStatus] = useState("checking"); // "checking" | "online" | "offline"
   const [copiedIndex, setCopiedIndex] = useState(null);
@@ -325,7 +331,7 @@ export default function App() {
         throw new Error("Forge returned no image.");
       }
 
-      const nextEntry = { src: `data:image/png;base64,${firstImage}`, prompt: promptText };
+      const nextEntry = { id: Date.now(), src: `data:image/png;base64,${firstImage}`, prompt: promptText };
       setGeneratedImages((prev) => [...prev, nextEntry]);
       setSelectedImage(nextEntry);
     } catch (generateError) {
@@ -650,9 +656,24 @@ export default function App() {
                     .reverse()
                     .map((entry, index) => (
                       <div
-                        key={`${entry.src.slice(0, 24)}-${index}`}
+                        key={entry.id}
                         className="group relative overflow-hidden rounded-2xl border border-slate-700/60 bg-slate-950 shadow-md transition-all duration-300 hover:scale-105 hover:border-fuchsia-500/50 hover:shadow-xl hover:shadow-fuchsia-950/25"
                       >
+                        {/* Delete button — top-right corner, visible on hover */}
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            deleteImage(entry.id);
+                          }}
+                          title="Delete image"
+                          className="absolute right-2 top-2 z-10 flex h-7 w-7 items-center justify-center rounded-lg border border-red-500/40 bg-slate-900/80 text-red-400 opacity-0 shadow-lg backdrop-blur transition-all duration-200 hover:border-red-400 hover:bg-red-600 hover:text-white group-hover:opacity-100"
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="h-3.5 w-3.5">
+                            <path fillRule="evenodd" d="M8.75 1A2.75 2.75 0 006 3.75v.443c-.795.077-1.584.176-2.365.298a.75.75 0 10.23 1.482l.149-.022.841 10.518A2.75 2.75 0 007.596 19h4.807a2.75 2.75 0 002.742-2.53l.841-10.52.149.023a.75.75 0 00.23-1.482A41.03 41.03 0 0014 4.193V3.75A2.75 2.75 0 0011.25 1h-2.5zM10 4c.84 0 1.673.025 2.5.075V3.75c0-.69-.56-1.25-1.25-1.25h-2.5c-.69 0-1.25.56-1.25 1.25v.325C8.327 4.025 9.16 4 10 4zM8.58 7.72a.75.75 0 00-1.5.06l.3 7.5a.75.75 0 101.5-.06l-.3-7.5zm4.34.06a.75.75 0 10-1.5-.06l-.3 7.5a.75.75 0 101.5.06l.3-7.5z" clipRule="evenodd" />
+                          </svg>
+                        </button>
+
                         <button
                           type="button"
                           onClick={() => setSelectedImage(entry)}
@@ -664,7 +685,7 @@ export default function App() {
                             className="aspect-square w-full object-cover transition-all duration-300 group-hover:brightness-50"
                           />
                         </button>
-                        {/* Hover overlay */}
+                        {/* Hover overlay — prompt copy + save */}
                         <div className="absolute inset-x-0 bottom-0 flex translate-y-1 items-center justify-center gap-2 p-2 opacity-0 transition-all duration-200 group-hover:translate-y-0 group-hover:opacity-100">
                           <button
                             type="button"
@@ -729,6 +750,13 @@ export default function App() {
                 >
                   ⬇ Download
                 </a>
+                <button
+                  type="button"
+                  onClick={() => deleteImage(selectedImage.id)}
+                  className="rounded-xl border border-red-500/40 bg-red-500/10 px-3 py-1.5 text-xs font-medium text-red-300 transition hover:bg-red-500/25"
+                >
+                  🗑 Delete
+                </button>
                 <button
                   type="button"
                   onClick={() => setSelectedImage(null)}
